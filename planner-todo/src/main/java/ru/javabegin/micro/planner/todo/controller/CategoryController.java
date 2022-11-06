@@ -106,7 +106,6 @@ public class CategoryController {
         if (categorySearchValues.getUserId() == null || categorySearchValues.getUserId() == 0) {
             return new ResponseEntity("missed param: user id", HttpStatus.NOT_ACCEPTABLE);
         }
-
         // поиск категорий пользователя по названию
         List<Category> list = categoryService.findByTitle(categorySearchValues.getTitle(), categorySearchValues.getUserId());
 

@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Table(name = "user_data", schema = "todo", catalog = "planner_todo")
+@Table(name = "user_data", schema = "users", catalog = "planner_users")
 @Setter
 @Getter
 @AllArgsConstructor
@@ -28,11 +28,10 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     private String email;
-
     private String username;
+
+    private Long id;
 
     @Column(name = "userpassword")
     private String password;
