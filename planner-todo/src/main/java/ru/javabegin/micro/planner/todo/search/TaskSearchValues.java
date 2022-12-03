@@ -19,7 +19,7 @@ public class TaskSearchValues {
     private Integer completed;
     private Long priorityId;
     private Long categoryId;
-    private Long id;
+    private Long userId;
 
     private Date dateFrom; // для задания периода по датам
     private Date dateTo;

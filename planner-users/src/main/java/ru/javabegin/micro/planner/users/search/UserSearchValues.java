@@ -9,8 +9,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+// возможные значения, по которым можно искать задачи + значения сортировки
 public class UserSearchValues {
 
+    // поля поиска (все типы - объектные, не примитивные. Чтобы можно было передать null)
     private String email;
     private String username;
 
@@ -21,4 +23,5 @@ public class UserSearchValues {
     // сортировка
     private String sortColumn;
     private String sortDirection;
+
 }

@@ -1,6 +1,5 @@
 package ru.javabegin.micro.planner.todo.service;
 
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -27,9 +26,8 @@ public class TaskService {
         this.repository = repository;
     }
 
-    @Cacheable(cacheNames = "tasks")
-    public List<Task> findAll(Long id) {
-        return repository.findByUserId(id);
+    public List<Task> findAll(Long userId) {
+        return repository.findByUserIdOrderByTitleAsc(userId);
     }
 
     public Task add(Task task) {
@@ -44,9 +42,8 @@ public class TaskService {
         repository.deleteById(id);
     }
 
-    @Cacheable(cacheNames = "tasks")
-    public Page<Task> findByParams(String text, Boolean completed, Long priorityId, Long categoryId, Long id, Date dateFrom, Date dateTo, PageRequest paging) {
-        return repository.findByParams(text, completed, priorityId, categoryId, id, dateFrom, dateTo, paging);
+    public Page<Task> findByParams(String text, Boolean completed, Long priorityId, Long categoryId, Long userId, Date dateFrom, Date dateTo, PageRequest paging) {
+        return repository.findByParams(text, completed, priorityId, categoryId, userId, dateFrom, dateTo, paging);
     }
 
     public Task findById(Long id) {

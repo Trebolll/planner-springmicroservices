@@ -37,10 +37,10 @@ public class StatController {
 
     // для статистика всгда получаем только одну строку с id=1 (согласно таблице БД)
     @PostMapping("/stat")
-    public ResponseEntity<Stat> findById(@RequestBody Long id) {
+    public ResponseEntity<Stat> findByEmail(@RequestBody Long userId) {
 
         // можно не использовать ResponseEntity, а просто вернуть коллекцию, код все равно будет 200 ОК
-        return ResponseEntity.ok(statService.findStatId(id));
+        return ResponseEntity.ok(statService.findStat(userId));
     }
 
 

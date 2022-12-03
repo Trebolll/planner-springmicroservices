@@ -8,6 +8,8 @@ import ru.javabegin.micro.planner.entity.Category;
 import ru.javabegin.micro.planner.todo.search.CategorySearchValues;
 import ru.javabegin.micro.planner.todo.service.CategoryService;
 
+
+
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -28,10 +30,15 @@ public class CategoryController {
     // доступ к данным из БД
     private CategoryService categoryService;
 
+    // микросервисы для работы с пользователями
+    private ru.javabegin.micro.planner.utils.resttemplate.UserRestBuilder userRestBuilder;
+
+
     // используем автоматическое внедрение экземпляра класса через конструктор
     // не используем @Autowired ля переменной класса, т.к. "Field injection is not recommended "
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, ru.javabegin.micro.planner.utils.resttemplate.UserRestBuilder userRestBuilder) {
         this.categoryService = categoryService;
+        this.userRestBuilder = userRestBuilder;
     }
 
     @PostMapping("/all")
@@ -54,9 +61,15 @@ public class CategoryController {
             return new ResponseEntity("missed param: title MUST be not null", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        return ResponseEntity.ok(categoryService.add(category)); // возвращаем добавленный объект с заполненным ID
-    }
+        // если такой пользователь существует
+        if (userRestBuilder.userExists(category.getUserId())) { // вызываем микросервис из другого модуля
+            return ResponseEntity.ok(categoryService.add(category)); // возвращаем добавленный объект с заполненным ID
+        }
 
+        // если пользователя НЕ существует
+        return new ResponseEntity("user id=" + category.getUserId() + " not found", HttpStatus.NOT_ACCEPTABLE);
+
+    }
 
 
     @PutMapping("/update")
@@ -77,7 +90,6 @@ public class CategoryController {
 
         return new ResponseEntity(HttpStatus.OK); // просто отправляем статус 200 (операция прошла успешно)
     }
-
 
 
     // для удаления используем тип запроса DELETE и передаем ID для удаления
@@ -106,6 +118,7 @@ public class CategoryController {
         if (categorySearchValues.getUserId() == null || categorySearchValues.getUserId() == 0) {
             return new ResponseEntity("missed param: user id", HttpStatus.NOT_ACCEPTABLE);
         }
+
         // поиск категорий пользователя по названию
         List<Category> list = categoryService.findByTitle(categorySearchValues.getTitle(), categorySearchValues.getUserId());
 
