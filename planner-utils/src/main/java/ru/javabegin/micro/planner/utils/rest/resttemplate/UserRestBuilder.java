@@ -1,4 +1,4 @@
-package ru.javabegin.micro.planner.utils.resttemplate;
+package ru.javabegin.micro.planner.utils.rest.resttemplate;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -10,7 +10,7 @@ import ru.javabegin.micro.planner.entity.User;
 
 @Component
 
-// спец. класс для вызова микросервисов пользователей
+// спец. класс для вызова микросервисов пользователей с помощью RestTemplate
 public class UserRestBuilder {
 
     private static final String baseUrl = "http://localhost:8765/planner-users/user/";
@@ -28,7 +28,7 @@ public class UserRestBuilder {
 
         try {
 
-            // вызов сервисы
+            // вызов сервиса
             response = restTemplate.exchange(baseUrl+"/id", HttpMethod.POST, request, User.class);
 
             if (response.getStatusCode() == HttpStatus.OK) { // если статус был 200

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.javabegin.micro.planner.entity.Priority;
 import ru.javabegin.micro.planner.todo.search.PrioritySearchValues;
 import ru.javabegin.micro.planner.todo.service.PriorityService;
+import ru.javabegin.micro.planner.utils.rest.resttemplate.UserRestBuilder;
 
 
 import java.util.List;
@@ -36,15 +37,16 @@ public class PriorityController {
     private PriorityService priorityService;
 
     // микросервисы для работы с пользователями
-    private ru.javabegin.micro.planner.utils.resttemplate.UserRestBuilder userRestBuilder;
+    private UserRestBuilder userRestBuilder;
 
     // используем автоматическое внедрение экземпляра класса через конструктор
     // не используем @Autowired ля переменной класса, т.к. "Field injection is not recommended "
-    public PriorityController(PriorityService priorityService, ru.javabegin.micro.planner.utils.resttemplate.UserRestBuilder userRestBuilder) {
+
+
+    public PriorityController(PriorityService priorityService, UserRestBuilder userRestBuilder) {
         this.priorityService = priorityService;
         this.userRestBuilder = userRestBuilder;
     }
-
 
     @PostMapping("/all")
     public List<Priority> findAll(@RequestBody Long userId) {

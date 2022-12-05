@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.javabegin.micro.planner.entity.Category;
 import ru.javabegin.micro.planner.todo.search.CategorySearchValues;
 import ru.javabegin.micro.planner.todo.service.CategoryService;
-
+import ru.javabegin.micro.planner.utils.rest.resttemplate.UserRestBuilder;
+import ru.javabegin.micro.planner.utils.rest.webclient.UserWebClientBuilder;
 
 
 import java.util.List;
@@ -31,14 +32,17 @@ public class CategoryController {
     private CategoryService categoryService;
 
     // микросервисы для работы с пользователями
-    private ru.javabegin.micro.planner.utils.resttemplate.UserRestBuilder userRestBuilder;
+    private UserRestBuilder userRestBuilder;
+
+    private UserWebClientBuilder userWebClientBuilder;
 
 
     // используем автоматическое внедрение экземпляра класса через конструктор
     // не используем @Autowired ля переменной класса, т.к. "Field injection is not recommended "
-    public CategoryController(CategoryService categoryService, ru.javabegin.micro.planner.utils.resttemplate.UserRestBuilder userRestBuilder) {
+    public CategoryController(CategoryService categoryService, UserRestBuilder userRestBuilder, UserWebClientBuilder userWebClientBuilder) {
         this.categoryService = categoryService;
         this.userRestBuilder = userRestBuilder;
+        this.userWebClientBuilder = userWebClientBuilder;
     }
 
     @PostMapping("/all")
@@ -61,16 +65,17 @@ public class CategoryController {
             return new ResponseEntity("missed param: title MUST be not null", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        // если такой пользователь существует
+
         if (userRestBuilder.userExists(category.getUserId())) { // вызываем микросервис из другого модуля
             return ResponseEntity.ok(categoryService.add(category)); // возвращаем добавленный объект с заполненным ID
         }
+
+//        userWebClientBuilder.userExistsAsync(category.getUserId()).subscribe(user -> System.out.println("user = "+ user));
 
         // если пользователя НЕ существует
         return new ResponseEntity("user id=" + category.getUserId() + " not found", HttpStatus.NOT_ACCEPTABLE);
 
     }
-
 
     @PutMapping("/update")
     public ResponseEntity update(@RequestBody Category category) {
