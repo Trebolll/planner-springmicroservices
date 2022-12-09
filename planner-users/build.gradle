@@ -25,8 +25,15 @@ dependencies {
 	implementation 'ru.javabegin.micro.planner:planner-entity'
 	implementation 'ru.javabegin.micro.planner:planner-utils'
 
+
 	// драйвер БД
 	runtimeOnly 'org.postgresql:postgresql'
+
+	//rabbit
+	implementation "org.springframework.boot:spring-boot-starter-amqp"
+	implementation "org.springframework.cloud:spring-cloud-stream"
+	implementation "org.springframework.cloud:spring-cloud-stream-binder-rabbit"
+	testImplementation "org.springframework.amqp:spring-rabbit-test"
 
 
 	// lombok
