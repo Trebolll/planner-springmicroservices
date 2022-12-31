@@ -1,5 +1,6 @@
 package ru.javabegin.micro.planner.users.controller;
 
+import org.keycloak.admin.client.CreatedResponseUtil;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -8,13 +9,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import ru.javabegin.micro.planner.users.keycloak.KeycloakUtils;
 import ru.javabegin.micro.planner.users.mq.func.MessageFuncActions;
 
+import ru.javabegin.micro.planner.users.userDTO.UserDTO;
 import ru.javabegin.micro.planner.utils.rest.webclient.UserWebClientBuilder;
 import ru.javabegin.micro.planner.entity.User;
 import ru.javabegin.micro.planner.users.search.UserSearchValues;
 import ru.javabegin.micro.planner.users.service.UserService;
 
+import javax.ws.rs.core.Response;
 import java.text.ParseException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -35,11 +39,16 @@ import java.util.Optional;
 */
 
 @RestController
-@RequestMapping("/user") // базовый URI
-public class UserController {
+@RequestMapping("/admin/user") // базовый URI
+public class AdminController {
 
     public static final String ID_COLUMN = "id"; // имя столбца id
-    private final UserService userService;
+    private static final int CONFLICT = 409; // если пользователь уже существует в KC и пытаемся создать такого же
+    private final UserService userService; // сервис для доступа к данным (напрямую к репозиториям не обращаемся)
+    private final KeycloakUtils keycloakUtils;
+
+
+    // микросервисы для работы с пользователями
     private UserWebClientBuilder userWebClientBuilder;
 
     // для отправки сообщения по требованию (реализовано с помощью функц. кода)
@@ -47,56 +56,72 @@ public class UserController {
 
     // используем автоматическое внедрение экземпляра класса через конструктор
     // не используем @Autowired ля переменной класса, т.к. "Field injection is not recommended "
-    public UserController(MessageFuncActions messageFuncActions, UserService userService, UserWebClientBuilder userWebClientBuilder) {
+    public AdminController(KeycloakUtils keycloakUtils, MessageFuncActions messageFuncActions, UserService userService, UserWebClientBuilder userWebClientBuilder) {
         this.userService = userService;
         this.userWebClientBuilder = userWebClientBuilder;
         this.messageFuncActions = messageFuncActions;
+        this.keycloakUtils = keycloakUtils;
     }
 
 
     // добавление
     @PostMapping("/add")
-    public ResponseEntity<User> add(@RequestBody User user) {
+    public ResponseEntity add(@RequestBody UserDTO userDTO) {
 
         // проверка на обязательные параметры
-        if (user.getId() != null && user.getId() != 0) {
+        if (userDTO.getId() != null && userDTO.getId() != 0) {
             // id создается автоматически в БД (autoincrement), поэтому его передавать не нужно, иначе может быть конфликт уникальности значения
             return new ResponseEntity("redundant param: id MUST be null", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // если передали пустое значение
-        if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
+        if (userDTO.getEmail() == null || userDTO.getEmail().trim().length() == 0) {
             return new ResponseEntity("missed param: email", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        if (user.getPassword() == null || user.getPassword().trim().length() == 0) {
+        if (userDTO.getPassword() == null || userDTO.getPassword().trim().length() == 0) {
             return new ResponseEntity("missed param: password", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        if (user.getUsername() == null || user.getUsername().trim().length() == 0) {
+        if (userDTO.getUsername() == null || userDTO.getUsername().trim().length() == 0) {
             return new ResponseEntity("missed param: username", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // добавляем пользователя
-        user = userService.add(user);
+//        userDTO = userService.add(userDTO);
 
-//        if (user != null) {
+//        if (userDTO != null) {
 //            // заполняем начальные данные пользователя (в параллелном потоке)
-//            userWebClientBuilder.initUserData(user.getId()).subscribe(result -> {
-//                        System.out.println("user populated: " + result);
+//            userWebClientBuilder.initUserData(userDTO.getId()).subscribe(result -> {
+//                        System.out.println("userDTO populated: " + result);
 //                    }
 //            );
 //        }
 
-//        if (user != null) { // если пользователь добавился
-//            messageProducer.initUserData(user.getId()); // отправляем сообщение в канал
+//        if (userDTO != null) { // если пользователь добавился
+//            messageProducer.initUserData(userDTO.getId()); // отправляем сообщение в канал
 //        }
 
-        if (user != null) { // если пользователь добавился
-            messageFuncActions.sendNewUserMessage(user.getId()); // отправляем сообщение в канал
+//        if (userDTO != null) { // если пользователь добавился
+//            messageFuncActions.sendNewUserMessage(userDTO.getId()); // отправляем сообщение в канал
+//        }
+//
+//        return ResponseEntity.ok(userDTO); // возвращаем созданный объект со сгенерированным id
+
+
+        // создаем пользователя
+        Response createdResponse = keycloakUtils.createKeycloakUser(userDTO);
+
+        if (createdResponse.getStatus() == CONFLICT) {
+            return new ResponseEntity("user or email already exists " + userDTO.getEmail(), HttpStatus.CONFLICT);
         }
 
-        return ResponseEntity.ok(user); // возвращаем созданный объект со сгенерированным id
+        // получаем его ID
+        String userId = CreatedResponseUtil.getCreatedId(createdResponse);
+
+        System.out.printf("User created with userId: %s%n", userId);
+
+        return ResponseEntity.status(createdResponse.getStatus()).build();
 
     }
 
@@ -203,7 +228,6 @@ public class UserController {
     }
 
 
-
     // поиск по любым параметрам UserSearchValues
     @PostMapping("/search")
     public ResponseEntity<Page<User>> search(@RequestBody UserSearchValues userSearchValues) throws ParseException {
@@ -248,6 +272,4 @@ public class UserController {
         return ResponseEntity.ok(result);
 
     }
-
-
 }

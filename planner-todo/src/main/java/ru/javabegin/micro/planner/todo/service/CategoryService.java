@@ -42,7 +42,7 @@ public class CategoryService {
     }
 
     // поиск категорий пользователя по названию
-    public List<Category> findByTitle(String text, Long userId) {
+    public List<Category> findByTitle(String text, String userId) {
         return repository.findByTitle(text, userId);
     }
 

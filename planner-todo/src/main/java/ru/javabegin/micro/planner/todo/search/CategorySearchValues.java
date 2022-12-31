@@ -13,7 +13,7 @@ import lombok.Setter;
 public class CategorySearchValues {
 
     private String title; // такое же название должно быть у объекта на frontend - необязательно заполнять
-    private Long userId; // для фильтрации значений конкретного пользователя - обязательно нужно заполнять
+    private String userId; // для фильтрации значений конкретного пользователя - обязательно нужно заполнять
 
 
 }

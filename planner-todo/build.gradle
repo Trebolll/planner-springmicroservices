@@ -27,6 +27,8 @@ dependencies {
     implementation 'ru.javabegin.micro.planner:planner-entity'
     implementation 'ru.javabegin.micro.planner:planner-utils'
 
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-hystrix:+'
 
 
