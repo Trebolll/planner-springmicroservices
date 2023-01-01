@@ -6,8 +6,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,7 +17,9 @@ import ru.javabegin.micro.planner.users.userDTO.UserDTO;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 
 @Service
@@ -37,6 +41,34 @@ public class KeycloakUtils {
     private static UsersResource usersResource;   // доступ к API для работы с пользователями
 
 
+
+    public void addRoles(String userId, List<String> roles){
+
+        List<RoleRepresentation> kcRoles = new ArrayList<>();
+
+        for(String role:roles){
+            RoleRepresentation roleRep = realmResource.roles().get(role).toRepresentation();
+            kcRoles.add(roleRep);
+        }
+           UserResource uniqueUserResource = usersResource.get(userId);
+
+        uniqueUserResource.roles().realmLevel().add(kcRoles);
+    }
+
+
+    public void deleteKeyCloakUsers(String userId){
+        UserResource userResource = usersResource.get(userId);
+        userResource.remove();
+
+    }
+
+    public UserRepresentation findUserById(String userId){
+       return  usersResource.get(userId).toRepresentation();
+    }
+
+    public List<UserRepresentation> searchKeyCloakUsers(String email){
+        return usersResource.searchByAttributes(email);
+    }
 
     // создание объектов KC - будет выполняться после инициализации Spring бина
     @PostConstruct
@@ -60,17 +92,17 @@ public class KeycloakUtils {
     }
 
     // создание пользователя для KC
-    public Response  createKeycloakUser(UserDTO user) {
+    public Response createKeycloakUser(UserDTO userDTO) {
 
         // данные пароля - специальный объект-контейнер CredentialRepresentation
-        CredentialRepresentation credentialRepresentation = createPasswordCredentials(user.getPassword());
+        CredentialRepresentation credentialRepresentation = createPasswordCredentials(userDTO.getPassword());
 
         // данные пользователя (можете задавать или убирать любые поля - зависит от требуемого функционала)
         // специальный объект-контейнер UserRepresentation
         UserRepresentation kcUser = new UserRepresentation();
-        kcUser.setUsername(user.getUsername());
+        kcUser.setUsername(userDTO.getUsername());
         kcUser.setCredentials(Collections.singletonList(credentialRepresentation));
-        kcUser.setEmail(user.getEmail());
+        kcUser.setEmail(userDTO.getEmail());
         kcUser.setEnabled(true);
         kcUser.setEmailVerified(false);
         // вызов KC (всю внутреннюю кухню за нас делает библиотека - формирует REST запросы, заполняет параметры и пр.)
@@ -85,5 +117,22 @@ public class KeycloakUtils {
         passwordCredentials.setType(CredentialRepresentation.PASSWORD);
         passwordCredentials.setValue(password);
         return passwordCredentials;
+    }
+
+    public void updateKeycloakUser(UserDTO userDTO) {
+
+        // данные пароля - специальный объект-контейнер CredentialRepresentation
+        CredentialRepresentation credentialRepresentation = createPasswordCredentials(userDTO.getPassword());
+
+        // данные пользователя (можете задавать или убирать любые поля - зависит от требуемого функционала)
+        // специальный объект-контейнер UserRepresentation
+        UserRepresentation kcUser = new UserRepresentation();
+        kcUser.setUsername(userDTO.getUsername());
+        kcUser.setCredentials(Collections.singletonList(credentialRepresentation));
+        kcUser.setEmail(userDTO.getEmail());
+
+        UserResource uniqueUserRes = usersResource.get(userDTO.getId());
+        uniqueUserRes.update(kcUser);
+
     }
 }
